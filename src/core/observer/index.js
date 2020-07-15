@@ -149,6 +149,8 @@ export function defineReactive (
   // cater for pre-defined getter/setters
   const getter = property && property.get
   const setter = property && property.set
+
+  // 这里是啥意思，为什么要判断 setter？
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
