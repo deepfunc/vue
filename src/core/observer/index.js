@@ -150,18 +150,26 @@ export function defineReactive (
   const getter = property && property.get
   const setter = property && property.set
 
-  // 这里是啥意思，为什么要判断 setter？
+  // 如果是数据描述符，没有 getter；
+  // 如果是存取描述符，即可能有 getter 也可能有 setter；
+  // 这里的判断是，如果是数据描述符（!getter），则要取初始值；
+  // 如果是属性描述符，只要有 setter，就要递归观察；因为有 setter 证明使用者是希望被赋值的，那么就有观察的需求。
+  // https://github.com/vuejs/vue/issues/7280
+  // https://github.com/vuejs/vue/pull/7828
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
 
+  // shallow 默认不传值，那么就要进行递归观察。
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
+      // 如果这个属性原来有 getter，则由 getter 来取值；如果没有则返回上一次的 val。
       const value = getter ? getter.call(obj) : val
       if (Dep.target) {
+        // 设置观察依赖，target 就是 watcher。
         dep.depend()
         if (childOb) {
           childOb.dep.depend()

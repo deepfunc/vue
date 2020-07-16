@@ -36,7 +36,7 @@ export default class Watcher {
   active: boolean;
   deps: Array<Dep>;
   newDeps: Array<Dep>;
-  depIds: SimpleSet;
+  depIds: SimpleSet; // 这里用 Set 是要考虑查询速度
   newDepIds: SimpleSet;
   before: ?Function;
   getter: Function;
@@ -127,6 +127,7 @@ export default class Watcher {
    */
   addDep (dep: Dep) {
     const id = dep.id
+    // newDepIds 记录每一轮新的依赖关系
     if (!this.newDepIds.has(id)) {
       this.newDepIds.add(id)
       this.newDeps.push(dep)
@@ -140,6 +141,7 @@ export default class Watcher {
    * Clean up for dependency collection.
    */
   cleanupDeps () {
+    // 清除掉这一轮没有的 dep 观察依赖
     let i = this.deps.length
     while (i--) {
       const dep = this.deps[i]
@@ -147,6 +149,7 @@ export default class Watcher {
         dep.removeSub(this)
       }
     }
+
     let tmp = this.depIds
     this.depIds = this.newDepIds
     this.newDepIds = tmp
