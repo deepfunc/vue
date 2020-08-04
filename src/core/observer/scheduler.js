@@ -94,6 +94,7 @@ function flushSchedulerQueue () {
     has[id] = null
     watcher.run()
     // in dev build, check and stop circular updates.
+    // 循环更新是一个 watcher 被更新多次，这是什么场景？
     if (process.env.NODE_ENV !== 'production' && has[id] != null) {
       circular[id] = (circular[id] || 0) + 1
       if (circular[id] > MAX_UPDATE_COUNT) {
@@ -163,13 +164,18 @@ function callActivatedHooks (queue) {
  */
 export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
+
+  // 用 has 来做记录，保证队列中这个 watcher 只执行一次
   if (has[id] == null) {
     has[id] = true
     if (!flushing) {
+      // flushing 的含义是：是否正在清空需要刷新的队列
+      // 如果没有在清空，则先放队列
       queue.push(watcher)
     } else {
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
+      // 如果正在清空，则按 id 顺序插入到队列
       let i = queue.length - 1
       while (i > index && queue[i].id > watcher.id) {
         i--
@@ -184,6 +190,8 @@ export function queueWatcher (watcher: Watcher) {
         flushSchedulerQueue()
         return
       }
+
+      // 生产环境是下一次才刷新
       nextTick(flushSchedulerQueue)
     }
   }
