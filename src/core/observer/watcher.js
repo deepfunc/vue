@@ -167,6 +167,7 @@ export default class Watcher {
   update () {
     /* istanbul ignore else */
     if (this.lazy) {
+      // 如果是计算属性，这里就会标记为 dirty
       this.dirty = true
     } else if (this.sync) {
       this.run()

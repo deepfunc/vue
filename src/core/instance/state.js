@@ -168,12 +168,18 @@ const computedWatcherOptions = { lazy: true }
 
 function initComputed (vm: Component, computed: Object) {
   // $flow-disable-line
+  // 每个计算属性对应的 watcher 记录在 vm._computedWatchers 上。
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
   const isSSR = isServerRendering()
 
   for (const key in computed) {
     const userDef = computed[key]
+
+    /** 计算属性支持 setter
+     * 看这里：https://cn.vuejs.org/v2/guide/computed.html#%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7%E7%9A%84-setter
+     * 所以有定义 setter 的时候就要从对象的 get 去拿到 getter 了。
+     */
     const getter = typeof userDef === 'function' ? userDef : userDef.get
     if (process.env.NODE_ENV !== 'production' && getter == null) {
       warn(
@@ -184,6 +190,7 @@ function initComputed (vm: Component, computed: Object) {
 
     if (!isSSR) {
       // create internal watcher for the computed property.
+      // 每个计算属性也有个 watcher
       watchers[key] = new Watcher(
         vm,
         getter || noop,
@@ -214,6 +221,9 @@ export function defineComputed (
 ) {
   const shouldCache = !isServerRendering()
   if (typeof userDef === 'function') {
+    /** 先只关注最常用的方式，userDef 是一个函数
+     * 这里是在 vm 上面定义了计算属性同名的存取描述符
+     */
     sharedPropertyDefinition.get = shouldCache
       ? createComputedGetter(key)
       : createGetterInvoker(userDef)
@@ -240,11 +250,20 @@ export function defineComputed (
 
 function createComputedGetter (key) {
   return function computedGetter () {
+    // 首先在这里取回 watcher
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
+      // 如果标记了 dirty 才需要重新计算值
       if (watcher.dirty) {
+        // evaluate 取值后会解除 dirty 标记，除非 dep 再次 notify，在 watcher.update 中会再次标记。
         watcher.evaluate()
       }
+
+      /**
+       * 这里的意思是如果有一个 watcher 依赖了当前计算属性的 watcher，那么计算属性 watcher 会把他自己依赖的
+       * deps 传递给那个 watcher，也就是 Dep.target。
+       * 至于有哪个 watcher 会依赖计算属性？RenderWatcher 算一个吧。
+       */
       if (Dep.target) {
         watcher.depend()
       }
