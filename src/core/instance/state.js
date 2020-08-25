@@ -168,6 +168,7 @@ const computedWatcherOptions = { lazy: true }
 
 function initComputed (vm: Component, computed: Object) {
   // $flow-disable-line
+  // 计算属性初始化的入口
   // 每个计算属性对应的 watcher 记录在 vm._computedWatchers 上。
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
@@ -307,6 +308,7 @@ function initMethods (vm: Component, methods: Object) {
 }
 
 function initWatch (vm: Component, watch: Object) {
+  // 侦听属性初始化的入口
   for (const key in watch) {
     const handler = watch[key]
     if (Array.isArray(handler)) {
@@ -332,6 +334,8 @@ function createWatcher (
   if (typeof handler === 'string') {
     handler = vm[handler]
   }
+
+  // 其实侦听属性最后就是用 $watch api 实现的。
   return vm.$watch(expOrFn, handler, options)
 }
 
@@ -361,6 +365,7 @@ export function stateMixin (Vue: Class<Component>) {
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
 
+  // 这里就是 $watch 啦~
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,
@@ -373,6 +378,8 @@ export function stateMixin (Vue: Class<Component>) {
     options = options || {}
     options.user = true
     const watcher = new Watcher(vm, expOrFn, cb, options)
+
+    // 立即求值
     if (options.immediate) {
       try {
         cb.call(vm, watcher.value)
