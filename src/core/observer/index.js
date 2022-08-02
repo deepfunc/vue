@@ -172,6 +172,8 @@ export function defineReactive (
         // 设置观察依赖，target 就是 watcher。
         dep.depend()
         if (childOb) {
+          // 收集依赖，这就是为什么执行 Vue.set 的时候通过 ob.dep.notify() 能够通知到 watcher，
+          // 从而让添加新的属性到对象也可以检测到变化。
           childOb.dep.depend()
           if (Array.isArray(value)) {
             dependArray(value)
