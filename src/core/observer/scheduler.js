@@ -175,7 +175,7 @@ export function queueWatcher (watcher: Watcher) {
     } else {
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
-      // 如果正在清空，则按 id 顺序插入到队列
+      // 如果正在清空，则按 id 顺序插入到队列。按 id 顺序插入的原因是 Watcher 的执行是有顺序的。
       let i = queue.length - 1
       while (i > index && queue[i].id > watcher.id) {
         i--
@@ -183,6 +183,7 @@ export function queueWatcher (watcher: Watcher) {
       queue.splice(i + 1, 0, watcher)
     }
     // queue the flush
+    // 通过 waiting 保证对 nextTick(flushSchedulerQueue) 的调用逻辑只有一次。
     if (!waiting) {
       waiting = true
 
